@@ -1,0 +1,1698 @@
+<!-- AIRFEST26.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIRFEST 26 | Beyond The Stars</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Audiowide&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--cyber-blue:#00f0ff;--cyber-pink:#ff00ff;--cyber-purple:#b829dd;
+--cyber-yellow:#f0ff00;--cyber-green:#00ff9d;--neon-red:#ff073a;
+--space-dark:#0a0a1a;--space-deeper:#050510;
+}
+::selection{background:#ff00ff;color:#000}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#0a0a1a}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--cyber-blue),var(--cyber-pink));border-radius:3px}
+html{scroll-behavior:smooth}
+body{
+font-family:'Rajdhani',sans-serif;background:var(--space-deeper);
+color:#fff;overflow-x:hidden;cursor:none;
+}
+@media(max-width:768px){body{cursor:auto}}
+
+/* ===== LOADING SCREEN ===== */
+#loading-screen{
+position:fixed;inset:0;z-index:10000;background:var(--space-deeper);
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+transition:opacity 0.8s,transform 0.8s;
+}
+#loading-screen.hidden{opacity:0;transform:scale(1.1);pointer-events:none}
+#loading-screen .logo{
+font-family:'Orbitron',sans-serif;font-size:clamp(3rem,8vw,5rem);font-weight:900;
+letter-spacing:0.1em;margin-bottom:2rem;
+}
+#loading-screen .logo .a{color:var(--cyber-blue)}
+#loading-screen .logo .f{color:var(--cyber-pink)}
+#loading-screen .logo .n{color:var(--cyber-yellow)}
+#loading-text{
+font-family:'Share Tech Mono',monospace;font-size:0.8rem;
+color:rgba(0,240,255,0.7);letter-spacing:0.3em;margin-bottom:1.5rem;
+}
+.progress-bar-container{width:min(380px,80vw);position:relative}
+.progress-track{height:2px;background:rgba(255,255,255,0.1);overflow:hidden;position:relative}
+.progress-fill{
+height:100%;width:0%;
+background:linear-gradient(90deg,var(--cyber-blue),var(--cyber-pink),var(--cyber-purple));
+transition:width 0.3s;position:relative;
+}
+.progress-fill::after{
+content:'';position:absolute;top:0;right:0;width:40px;height:100%;
+background:linear-gradient(90deg,transparent,rgba(255,255,255,0.6));
+animation:shimmer 1s infinite;
+}
+.progress-info{display:flex;justify-content:space-between;margin-top:0.5rem}
+.progress-info span{font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.3)}
+.progress-info .pct{color:var(--cyber-blue);animation:blink 0.5s infinite}
+.corner-dec{
+position:absolute;width:24px;height:24px;
+border-color:rgba(0,240,255,0.25);animation:cornerPulse 2s infinite;
+}
+.corner-dec.tl{top:16px;left:16px;border-top:2px solid;border-left:2px solid}
+.corner-dec.tr{top:16px;right:16px;border-top:2px solid;border-right:2px solid;animation-delay:0.3s}
+.corner-dec.bl{bottom:16px;left:16px;border-bottom:2px solid;border-left:2px solid;animation-delay:0.6s}
+.corner-dec.br{bottom:16px;right:16px;border-bottom:2px solid;border-right:2px solid;animation-delay:0.9s}
+
+/* ===== CURSOR ===== */
+#cursor-dot,#cursor-ring{
+position:fixed;pointer-events:none;z-index:9999;
+border-radius:50%;transition:transform 0.1s;
+}
+#cursor-dot{
+width:8px;height:8px;background:var(--cyber-blue);
+box-shadow:0 0 10px var(--cyber-blue),0 0 20px var(--cyber-blue);
+transform:translate(-50%,-50%);
+}
+#cursor-ring{
+width:40px;height:40px;border:1px solid rgba(0,240,255,0.4);
+transform:translate(-50%,-50%);transition:all 0.15s ease-out;
+}
+#cursor-ring.clicking{
+transform:translate(-50%,-50%) scale(1.5);
+border-color:var(--cyber-pink);box-shadow:0 0 20px rgba(255,0,255,0.4);
+}
+@media(max-width:768px){#cursor-dot,#cursor-ring{display:none}}
+
+/* ===== STARFIELD CANVAS ===== */
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ===== SCAN LINES ===== */
+.scanline{
+position:fixed;left:0;width:100%;height:2px;z-index:9990;pointer-events:none;
+background:rgba(0,240,255,0.08);animation:scanMove 6s linear infinite;
+}
+.scanline:nth-child(2){animation-delay:2s;background:rgba(255,0,255,0.06)}
+.scanline:nth-child(3){animation-delay:4s;background:rgba(184,41,221,0.05)}
+
+/* ===== HUD OVERLAY ===== */
+.hud-overlay{
+position:fixed;inset:0;z-index:9988;pointer-events:none;
+}
+.hud-text{
+position:absolute;font-family:'Share Tech Mono',monospace;
+font-size:9px;letter-spacing:0.2em;animation:hudFlicker 3s infinite;
+}
+.hud-tl{top:80px;left:16px;color:rgba(0,240,255,0.15)}
+.hud-tr{top:80px;right:16px;text-align:right;color:rgba(255,0,255,0.15)}
+
+/* ===== VIGNETTE & NOISE ===== */
+.vignette{
+position:fixed;inset:0;z-index:9987;pointer-events:none;
+background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.5) 100%);
+}
+.noise{
+position:fixed;inset:0;z-index:9986;pointer-events:none;opacity:0.03;
+background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== SCROLL PROGRESS BAR ===== */
+#scroll-progress{
+position:fixed;top:0;left:0;height:2px;z-index:10001;
+background:linear-gradient(90deg,var(--cyber-blue),var(--cyber-pink),var(--cyber-yellow));
+box-shadow:0 0 10px var(--cyber-blue),0 0 20px var(--cyber-pink);
+width:0%;transition:width 0.1s;
+}
+
+/* ===== NAVBAR ===== */
+#navbar{
+position:fixed;top:0;left:0;right:0;z-index:1000;
+padding:1rem 0;transition:all 0.4s;
+background:rgba(5,5,16,0.5);backdrop-filter:blur(20px);
+}
+#navbar.scrolled{
+padding:0.5rem 0;background:rgba(5,5,16,0.95);
+border-bottom:1px solid rgba(0,240,255,0.1);
+}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 1rem;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:0.5rem;cursor:pointer;text-decoration:none}
+.nav-logo-orbit{
+position:relative;width:36px;height:36px;animation:rotateSlow 20s linear infinite;
+}
+.nav-logo-orbit .ring1{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(0,240,255,0.4)}
+.nav-logo-orbit .ring2{position:absolute;inset:3px;border-radius:50%;border:1px solid rgba(255,0,255,0.3)}
+.nav-logo-orbit .core{
+position:absolute;inset:8px;border-radius:50%;background:var(--cyber-blue);
+box-shadow:0 0 8px var(--cyber-blue);animation:corePulse 2s infinite;
+}
+.nav-logo-text{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;letter-spacing:0.15em}
+.nav-logo-text .a{color:var(--cyber-blue)}
+.nav-logo-text .f{color:var(--cyber-pink)}
+.nav-logo-text .n{color:var(--cyber-yellow)}
+.nav-logo-line{height:1px;background:linear-gradient(90deg,var(--cyber-blue),var(--cyber-pink),transparent);margin-top:2px}
+
+.nav-links{display:flex;align-items:center;gap:0.25rem;list-style:none}
+.nav-links a{
+position:relative;padding:0.5rem 1rem;font-family:'Share Tech Mono',monospace;
+font-size:0.8rem;letter-spacing:0.15em;color:rgba(255,255,255,0.5);
+text-decoration:none;transition:all 0.3s;
+}
+.nav-links a:hover,.nav-links a.active{color:var(--cyber-blue)}
+.nav-links a .icon{color:var(--cyber-pink);opacity:0.5;margin-right:4px;font-size:0.7rem}
+.nav-links a::after{
+content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+background:linear-gradient(90deg,var(--cyber-blue),var(--cyber-pink));
+box-shadow:0 0 8px var(--cyber-blue);transform:scaleX(0);transition:transform 0.3s;
+}
+.nav-links a.active::after,.nav-links a:hover::after{transform:scaleX(1)}
+
+.nav-cta{
+font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;
+letter-spacing:0.15em;padding:0.5rem 1.5rem;background:var(--cyber-blue);
+color:var(--space-dark);border:none;cursor:pointer;
+clip-path:polygon(0 4px,4px 0,calc(100% - 4px) 0,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px));
+box-shadow:0 0 10px rgba(0,240,255,0.4);transition:all 0.3s;
+}
+.nav-cta:hover{box-shadow:0 0 25px rgba(0,240,255,0.7);transform:scale(1.05)}
+
+.nav-mobile-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px}
+.nav-mobile-btn span{display:block;width:24px;height:2px;transition:all 0.3s}
+.nav-mobile-btn span:nth-child(1){background:var(--cyber-blue)}
+.nav-mobile-btn span:nth-child(2){background:var(--cyber-pink)}
+.nav-mobile-btn span:nth-child(3){background:var(--cyber-blue)}
+.nav-mobile-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-mobile-btn.open span:nth-child(2){opacity:0}
+.nav-mobile-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+#mobile-menu{
+display:none;position:fixed;inset:0;z-index:999;
+background:rgba(5,5,16,0.97);backdrop-filter:blur(30px);
+flex-direction:column;align-items:center;justify-content:center;gap:2rem;
+}
+#mobile-menu.open{display:flex}
+#mobile-menu a{
+font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;
+letter-spacing:0.2em;color:rgba(255,255,255,0.6);text-decoration:none;
+transition:all 0.3s;
+}
+#mobile-menu a:hover{color:var(--cyber-blue);text-shadow:0 0 20px var(--cyber-blue)}
+
+@media(max-width:768px){
+.nav-links,.nav-cta{display:none}
+.nav-mobile-btn{display:flex}
+}
+
+/* ===== CYBER CLIP ===== */
+.cyber-clip{
+clip-path:polygon(0 8px,8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px));
+}
+.cyber-clip-lg{
+clip-path:polygon(0 16px,16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px));
+}
+
+/* ===== GLASS PANEL ===== */
+.glass{
+background:rgba(10,10,26,0.7);backdrop-filter:blur(20px);
+border:1px solid rgba(0,240,255,0.12);
+}
+
+/* ===== MATRIX GRID BG ===== */
+.matrix-bg{
+background-image:
+linear-gradient(rgba(0,240,255,0.03) 1px,transparent 1px),
+linear-gradient(90deg,rgba(0,240,255,0.03) 1px,transparent 1px);
+background-size:30px 30px;
+}
+
+/* ===== NEON BUTTON ===== */
+.neon-btn{
+position:relative;overflow:hidden;font-family:'Orbitron',sans-serif;
+font-weight:700;letter-spacing:0.15em;text-transform:uppercase;
+background:transparent;cursor:pointer;transition:all 0.3s;
+padding:0.8rem 2rem;font-size:0.85rem;
+}
+.neon-btn.blue{border:1px solid var(--cyber-blue);color:var(--cyber-blue);box-shadow:0 0 8px rgba(0,240,255,0.3)}
+.neon-btn.pink{border:1px solid var(--cyber-pink);color:var(--cyber-pink);box-shadow:0 0 8px rgba(255,0,255,0.3)}
+.neon-btn.yellow{border:1px solid var(--cyber-yellow);color:var(--cyber-yellow);box-shadow:0 0 8px rgba(240,255,0,0.3)}
+.neon-btn:hover{transform:scale(1.05)}
+.neon-btn.blue:hover{background:rgba(0,240,255,0.1);box-shadow:0 0 25px rgba(0,240,255,0.5)}
+.neon-btn.pink:hover{background:rgba(255,0,255,0.1);box-shadow:0 0 25px rgba(255,0,255,0.5)}
+.neon-btn.yellow:hover{background:rgba(240,255,0,0.1);box-shadow:0 0 25px rgba(240,255,0,0.5)}
+.neon-btn:active{transform:scale(0.95)}
+.neon-btn .scan{
+position:absolute;top:-30%;left:0;width:100%;height:30%;
+background:linear-gradient(transparent,rgba(255,255,255,0.08),transparent);
+animation:btnScan 2.5s linear infinite;pointer-events:none;
+}
+.neon-btn .ripple{
+position:absolute;border-radius:50%;transform:translate(-50%,-50%);
+background:rgba(0,240,255,0.3);animation:rippleOut 0.6s forwards;pointer-events:none;
+}
+
+/* ===== SECTION COMMON ===== */
+section{position:relative;z-index:1}
+.section-header{text-align:center;margin-bottom:4rem}
+.section-tag{
+font-family:'Share Tech Mono',monospace;font-size:0.8rem;
+letter-spacing:0.3em;display:block;margin-bottom:0.5rem;
+animation:tagPulse 2s infinite;
+}
+.section-tag.blue{color:var(--cyber-blue)}
+.section-tag.pink{color:var(--cyber-pink)}
+.section-tag.yellow{color:var(--cyber-yellow)}
+.section-tag.green{color:var(--cyber-green)}
+.section-tag.purple{color:var(--cyber-purple)}
+.section-title{
+font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,6vw,3.5rem);font-weight:900;
+}
+.section-line{
+margin:1rem auto 0;height:2px;width:160px;
+background:linear-gradient(90deg,transparent,var(--cyber-blue),var(--cyber-pink),transparent);
+}
+
+/* ===== HERO ===== */
+#hero{
+min-height:100vh;display:flex;align-items:center;justify-content:center;
+position:relative;overflow:hidden;
+}
+.hero-nebula{
+position:absolute;border-radius:50%;filter:blur(60px);
+animation:nebulaPulse 12s ease-in-out infinite;
+}
+.hero-nebula.n1{
+width:500px;height:500px;top:20%;left:-10%;
+background:radial-gradient(circle,rgba(0,240,255,0.1),transparent 70%);
+}
+.hero-nebula.n2{
+width:400px;height:400px;bottom:20%;right:-10%;
+background:radial-gradient(circle,rgba(255,0,255,0.1),transparent 70%);
+animation-delay:3s;
+}
+.hero-nebula.n3{
+width:350px;height:350px;top:40%;left:40%;
+background:radial-gradient(circle,rgba(184,41,221,0.08),transparent 70%);
+animation-delay:6s;
+}
+.hero-orbit{
+position:absolute;border-radius:50%;border:1px solid rgba(0,240,255,0.08);
+top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.hero-orbit .dot{
+position:absolute;top:-3px;left:50%;width:6px;height:6px;
+border-radius:50%;transform:translateX(-50%);
+}
+.orbit1{width:300px;height:300px;animation:rotateSlow 15s linear infinite}
+.orbit1 .dot{background:var(--cyber-blue);box-shadow:0 0 8px var(--cyber-blue)}
+.orbit2{width:420px;height:420px;animation:rotateSlow 20s linear infinite reverse}
+.orbit2 .dot{background:var(--cyber-pink);box-shadow:0 0 8px var(--cyber-pink)}
+.orbit3{width:540px;height:540px;animation:rotateSlow 25s linear infinite}
+.orbit3 .dot{background:var(--cyber-purple);box-shadow:0 0 8px var(--cyber-purple)}
+.orbit4{width:660px;height:660px;animation:rotateSlow 30s linear infinite reverse}
+.orbit4 .dot{background:var(--cyber-yellow);box-shadow:0 0 8px var(--cyber-yellow)}
+
+.hero-grid-floor{
+position:absolute;bottom:0;left:0;right:0;height:33%;overflow:hidden;
+}
+.hero-grid-floor .grid{
+width:100%;height:100%;
+background:
+linear-gradient(transparent 50%,rgba(0,240,255,0.03)),
+repeating-linear-gradient(90deg,rgba(0,240,255,0.05) 0px,transparent 1px,transparent 60px),
+repeating-linear-gradient(0deg,rgba(0,240,255,0.05) 0px,transparent 1px,transparent 60px);
+transform:perspective(500px) rotateX(60deg);transform-origin:center top;
+}
+
+.hero-content{position:relative;z-index:10;text-align:center;max-width:1100px;padding:0 1rem}
+.hero-badge{
+display:inline-flex;align-items:center;gap:0.75rem;
+padding:0.5rem 1.5rem;margin-bottom:2rem;
+}
+.hero-badge .dot{
+width:8px;height:8px;border-radius:50%;animation:blink 1s infinite;
+}
+.hero-badge .dot.green{background:var(--cyber-green)}
+.hero-badge .dot.pink{background:var(--cyber-pink);animation-delay:0.5s}
+.hero-badge span{
+font-family:'Share Tech Mono',monospace;font-size:0.8rem;
+color:var(--cyber-blue);letter-spacing:0.3em;
+}
+
+.hero-title{
+font-family:'Orbitron',sans-serif;font-weight:900;line-height:0.9;
+margin-bottom:1.5rem;
+}
+.hero-title .line{
+display:block;font-size:clamp(4rem,12vw,10rem);
+opacity:0;animation:heroSlideIn 0.8s forwards;
+}
+.hero-title .line1{color:var(--cyber-blue);animation-delay:1s}
+.hero-title .line2{color:var(--cyber-pink);animation-delay:1.2s}
+.hero-title .line3{color:var(--cyber-yellow);font-size:clamp(5rem,14vw,12rem);animation-delay:1.4s}
+
+.hero-subtitle{
+font-family:'Share Tech Mono',monospace;font-size:clamp(0.9rem,2vw,1.2rem);
+color:rgba(0,240,255,0.7);letter-spacing:0.2em;margin-bottom:2.5rem;
+min-height:1.5em;
+}
+.hero-subtitle .cursor-blink{color:var(--cyber-pink);animation:blink 0.5s infinite}
+
+.hero-divider{
+display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:2.5rem;
+}
+.hero-divider .line-l{height:1px;width:clamp(60px,10vw,160px);background:linear-gradient(90deg,transparent,var(--cyber-blue))}
+.hero-divider .line-r{height:1px;width:clamp(60px,10vw,160px);background:linear-gradient(90deg,var(--cyber-pink),transparent)}
+.hero-divider .diamond{
+width:12px;height:12px;border:1px solid var(--cyber-blue);
+transform:rotate(45deg);animation:rotateSlow 4s linear infinite;
+}
+
+.hero-buttons{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:3rem}
+
+.hero-stats{
+display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:700px;margin:0 auto;
+}
+@media(max-width:600px){.hero-stats{grid-template-columns:repeat(2,1fr)}}
+.stat-card{
+padding:1rem;text-align:center;transition:all 0.3s;
+}
+.stat-card:hover{border-color:var(--cyber-blue);box-shadow:0 0 20px rgba(0,240,255,0.2);transform:scale(1.05)}
+.stat-card .value{
+font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;
+color:var(--cyber-blue);
+}
+.stat-card .label{
+font-family:'Share Tech Mono',monospace;font-size:0.65rem;
+color:rgba(255,255,255,0.4);letter-spacing:0.2em;margin-top:0.25rem;
+}
+
+.scroll-indicator{
+position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+text-align:center;animation:floatY 2s ease-in-out infinite;
+}
+.scroll-indicator .text{
+font-family:'Share Tech Mono',monospace;font-size:0.6rem;
+color:rgba(255,255,255,0.25);letter-spacing:0.3em;margin-bottom:0.5rem;
+}
+.scroll-indicator .mouse{
+width:24px;height:40px;border:1px solid rgba(0,240,255,0.3);
+border-radius:12px;margin:0 auto;position:relative;
+}
+.scroll-indicator .mouse .wheel{
+width:4px;height:8px;background:var(--cyber-blue);border-radius:2px;
+position:absolute;top:8px;left:50%;transform:translateX(-50%);
+animation:scrollWheel 2s infinite;
+}
+
+/* ===== COUNTDOWN ===== */
+#countdown{padding:5rem 1rem;overflow:hidden}
+.countdown-grid{
+display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:800px;margin:0 auto;
+}
+@media(max-width:600px){.countdown-grid{grid-template-columns:repeat(2,1fr)}}
+.countdown-block{padding:1.5rem;text-align:center;position:relative;overflow:hidden;transition:all 0.3s}
+.countdown-block:hover{transform:scale(1.05)}
+.countdown-block .bg-pulse{
+position:absolute;inset:0;border-radius:50%;opacity:0;
+animation:countPulse 2s infinite;
+}
+.countdown-block .scan-line{
+position:absolute;left:0;width:100%;height:1px;
+animation:scanMove 3s linear infinite;pointer-events:none;
+}
+.countdown-block .number{
+font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,6vw,4rem);font-weight:900;
+position:relative;z-index:1;transition:all 0.3s;
+}
+.countdown-block .unit{
+font-family:'Share Tech Mono',monospace;font-size:0.65rem;
+letter-spacing:0.3em;color:rgba(255,255,255,0.35);margin-top:0.5rem;position:relative;z-index:1;
+}
+.countdown-dots{
+display:flex;justify-content:center;gap:0.5rem;margin-top:2rem;
+}
+.countdown-dots .d{
+width:4px;height:4px;background:rgba(0,240,255,0.3);
+animation:dotPulse 2s infinite;
+}
+
+/* ===== FEATURES / NEBULA ===== */
+#features{padding:6rem 1rem}
+.features-grid{
+display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;max-width:1200px;margin:0 auto;
+}
+@media(max-width:900px){.features-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.features-grid{grid-template-columns:1fr}}
+.feature-card{
+padding:2rem;position:relative;overflow:hidden;transition:all 0.4s;
+}
+.feature-card:hover{transform:translateY(-4px);border-color:rgba(0,240,255,0.3);box-shadow:0 0 30px rgba(0,240,255,0.1)}
+.feature-card .hover-bg{
+position:absolute;inset:0;opacity:0;transition:opacity 0.5s;
+background:radial-gradient(circle at 50% 50%,rgba(0,240,255,0.06),transparent);
+}
+.feature-card:hover .hover-bg{opacity:1}
+.feature-card .scan{
+position:absolute;left:0;width:100%;height:1px;
+background:rgba(0,240,255,0.15);opacity:0;transition:opacity 0.3s;
+animation:scanMove 2.5s linear infinite;
+}
+.feature-card:hover .scan{opacity:1}
+.feature-card .icon{font-size:2.5rem;margin-bottom:1rem;display:inline-block;transition:transform 0.3s}
+.feature-card:hover .icon{transform:scale(1.2) rotate(-5deg)}
+.feature-card h3{
+font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.75rem;
+}
+.feature-card p{font-size:0.85rem;color:rgba(255,255,255,0.35);line-height:1.6;margin-bottom:1rem}
+.feature-card .stat-line{display:flex;align-items:center;gap:0.5rem}
+.feature-card .stat-line .line{flex:1;height:1px}
+.feature-card .stat-line span{font-family:'Share Tech Mono',monospace;font-size:0.7rem}
+.feature-card .corner{
+position:absolute;width:20px;height:20px;opacity:0.2;transition:opacity 0.3s;
+}
+.feature-card:hover .corner{opacity:0.6}
+.feature-card .corner.br{bottom:12px;right:12px;border-bottom:2px solid;border-right:2px solid}
+
+/* ===== SCHEDULE ===== */
+#schedule{padding:6rem 1rem}
+.day-selector{
+display:flex;justify-content:center;gap:0.5rem;margin-bottom:3rem;flex-wrap:wrap;
+}
+.day-btn{
+position:relative;padding:1rem 2.5rem;font-family:'Orbitron',sans-serif;
+font-size:0.85rem;font-weight:700;letter-spacing:0.1em;
+background:transparent;border:1px solid rgba(255,255,255,0.1);
+color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.3s;
+}
+.day-btn:hover{color:rgba(255,255,255,0.7)}
+.day-btn.active{
+background:rgba(0,240,255,0.08);border-color:rgba(0,240,255,0.4);
+color:var(--cyber-blue);box-shadow:0 0 20px rgba(0,240,255,0.15);
+}
+.day-btn .codename{
+display:block;font-family:'Share Tech Mono',monospace;
+font-size:0.6rem;opacity:0.5;margin-top:0.25rem;letter-spacing:0.15em;
+}
+.day-btn.active::after{
+content:'';position:absolute;bottom:-1px;left:0;right:0;
+height:2px;background:var(--cyber-blue);box-shadow:0 0 8px var(--cyber-blue);
+}
+
+.schedule-date{
+text-align:center;font-family:'Share Tech Mono',monospace;
+font-size:0.8rem;color:rgba(255,255,255,0.2);margin-bottom:2rem;
+}
+
+.timeline{position:relative;max-width:900px;margin:0 auto}
+.timeline::before{
+content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;
+background:linear-gradient(to bottom,rgba(0,240,255,0.2),rgba(255,0,255,0.2),transparent);
+transform:translateX(-50%);
+}
+@media(max-width:768px){.timeline::before{left:16px}}
+
+.timeline-item{
+display:flex;align-items:flex-start;margin-bottom:1.5rem;position:relative;
+opacity:0;transform:translateY(20px);transition:all 0.5s;
+}
+.timeline-item.visible{opacity:1;transform:translateY(0)}
+.timeline-item:nth-child(even){flex-direction:row-reverse}
+@media(max-width:768px){.timeline-item,.timeline-item:nth-child(even){flex-direction:row}}
+
+.timeline-dot{
+position:absolute;left:50%;top:0;width:12px;height:12px;border-radius:50%;
+transform:translate(-50%,8px);z-index:2;animation:dotGlow 2s infinite;
+}
+@media(max-width:768px){.timeline-dot{left:16px}}
+
+.timeline-time{
+width:calc(50% - 40px);text-align:right;padding-right:2rem;padding-top:0.5rem;
+font-family:'Share Tech Mono',monospace;font-size:1rem;font-weight:700;
+}
+.timeline-item:nth-child(even) .timeline-time{text-align:left;padding-right:0;padding-left:2rem}
+@media(max-width:768px){
+.timeline-time{display:none}
+.timeline-card{margin-left:40px !important;width:calc(100% - 40px) !important}
+}
+
+.timeline-card{
+width:calc(50% - 40px);padding:1.25rem;position:relative;overflow:hidden;transition:all 0.3s;
+}
+.timeline-card:hover{border-color:rgba(0,240,255,0.3);box-shadow:0 0 20px rgba(0,240,255,0.1);transform:scale(1.02)}
+.timeline-card .card-scan{
+position:absolute;left:0;width:100%;height:1px;
+animation:scanMove 4s linear infinite;pointer-events:none;
+}
+.timeline-card .type-badge{
+display:inline-block;padding:0.15rem 0.5rem;font-family:'Share Tech Mono',monospace;
+font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;
+}
+.timeline-card .mobile-time{
+display:none;font-family:'Share Tech Mono',monospace;font-size:0.8rem;margin-bottom:0.25rem;
+}
+@media(max-width:768px){.timeline-card .mobile-time{display:block}}
+.timeline-card h4{font-family:'Orbitron',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.25rem}
+.timeline-card .desc{font-size:0.8rem;color:rgba(255,255,255,0.4)}
+.timeline-card .speaker{
+display:flex;align-items:center;gap:0.5rem;margin-top:0.75rem;
+}
+.timeline-card .speaker .live-dot{
+width:6px;height:6px;border-radius:50%;background:var(--cyber-green);
+animation:blink 1s infinite;
+}
+.timeline-card .speaker span{font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:rgba(0,255,157,0.6)}
+.timeline-card .corners>div{position:absolute;width:16px;height:16px;opacity:0.4}
+.timeline-card .corners .tl{top:4px;left:4px;border-top:1px solid;border-left:1px solid}
+.timeline-card .corners .tr{top:4px;right:4px;border-top:1px solid;border-right:1px solid}
+.timeline-card .corners .bl{bottom:4px;left:4px;border-bottom:1px solid;border-left:1px solid}
+.timeline-card .corners .br{bottom:4px;right:4px;border-bottom:1px solid;border-right:1px solid}
+
+/* ===== SPEAKERS ===== */
+#speakers{padding:6rem 1rem}
+.speakers-grid{
+display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;max-width:1200px;margin:0 auto;
+}
+@media(max-width:900px){.speakers-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.speakers-grid{grid-template-columns:1fr}}
+
+.speaker-card{
+position:relative;overflow:hidden;padding:1.5rem;transition:all 0.4s;cursor:pointer;
+}
+.speaker-card:hover{transform:translateY(-4px) scale(1.02)}
+.speaker-card .card-scan{
+position:absolute;left:0;width:100%;height:1px;opacity:0;
+animation:scanMove 3s linear infinite;transition:opacity 0.3s;
+}
+.speaker-card:hover .card-scan{opacity:1}
+.speaker-card .hover-bg{
+position:absolute;inset:0;opacity:0;transition:opacity 0.5s;
+}
+.speaker-card:hover .hover-bg{opacity:1}
+
+.speaker-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+.speaker-avatar{
+width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+font-size:1.8rem;border-radius:8px;position:relative;transition:transform 0.3s;
+}
+.speaker-card:hover .speaker-avatar{transform:rotate(-5deg) scale(1.1)}
+.speaker-avatar .pulse-ring{
+position:absolute;inset:0;border-radius:8px;
+animation:avatarPulse 2s infinite;
+}
+.speaker-info h3{font-family:'Orbitron',sans-serif;font-weight:700;font-size:0.95rem}
+.speaker-info .role{font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.4)}
+.speaker-info .org{font-family:'Share Tech Mono',monospace;font-size:0.65rem}
+
+.speaker-bio{font-size:0.8rem;color:rgba(255,255,255,0.35);line-height:1.5;margin-bottom:1rem}
+
+.speaker-topics{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem}
+.speaker-topics .topic{
+padding:0.15rem 0.5rem;font-family:'Share Tech Mono',monospace;
+font-size:0.65rem;transition:all 0.2s;
+}
+.speaker-topics .topic:hover{transform:scale(1.05)}
+
+.speaker-status{display:flex;align-items:center;gap:0.5rem}
+.speaker-status .dot{width:6px;height:6px;border-radius:50%;animation:blink 1.5s infinite}
+.speaker-status span{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.25)}
+
+.speaker-corners>div{position:absolute;width:14px;height:14px;opacity:0.2;transition:opacity 0.3s}
+.speaker-card:hover .speaker-corners>div{opacity:0.6}
+.speaker-corners .tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid}
+.speaker-corners .br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid}
+
+/* ===== MODAL ===== */
+.modal-overlay{
+position:fixed;inset:0;z-index:2000;display:none;
+align-items:center;justify-content:center;padding:1rem;
+}
+.modal-overlay.open{display:flex}
+.modal-backdrop{
+position:absolute;inset:0;background:rgba(5,5,16,0.92);backdrop-filter:blur(20px);
+}
+.modal-content{
+position:relative;max-width:480px;width:100%;overflow:hidden;
+animation:modalIn 0.4s;
+}
+.modal-top-bar{height:3px;width:100%}
+.modal-body{padding:2rem;text-align:center}
+.modal-body .avatar{font-size:3.5rem;margin-bottom:1rem}
+.modal-body h3{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.5rem;margin-bottom:0.25rem}
+.modal-body .role{font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:rgba(255,255,255,0.4)}
+.modal-body .org{font-family:'Share Tech Mono',monospace;font-size:0.7rem;margin-bottom:1rem}
+.modal-body .bio{color:rgba(255,255,255,0.5);margin-bottom:1.5rem;line-height:1.6;font-size:0.9rem}
+.modal-body .topics{display:flex;flex-wrap:wrap;justify-content:center;gap:0.5rem;margin-bottom:1.5rem}
+.modal-body .topics .topic{
+padding:0.3rem 0.8rem;font-family:'Share Tech Mono',monospace;font-size:0.75rem;
+}
+.modal-close-btn{
+width:100%;padding:0.8rem;font-family:'Orbitron',sans-serif;font-size:0.8rem;
+font-weight:700;letter-spacing:0.15em;background:transparent;cursor:pointer;
+transition:all 0.3s;
+}
+.modal-close-btn:hover{box-shadow:0 0 20px rgba(0,240,255,0.3)}
+
+/* ===== VENUE MAP ===== */
+#venue{padding:6rem 1rem}
+.venue-map{
+position:relative;max-width:900px;margin:0 auto;aspect-ratio:16/9;
+overflow:hidden;
+}
+.venue-map .grid-bg{position:absolute;inset:0;opacity:0.15}
+.venue-map svg{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.venue-map svg line{stroke-dasharray:5 5;animation:dashMove 10s linear infinite}
+
+.zone-marker{
+position:absolute;z-index:2;cursor:pointer;transform:translate(-50%,-50%);
+}
+.zone-marker .pulse{
+position:absolute;width:40px;height:40px;border-radius:50%;
+top:50%;left:50%;transform:translate(-50%,-50%);
+animation:zonePulse 3s infinite;pointer-events:none;
+}
+.zone-marker .dot{
+width:12px;height:12px;border-radius:50%;position:relative;z-index:3;
+transition:transform 0.3s;
+}
+.zone-marker:hover .dot{transform:scale(1.5)}
+.zone-marker .label{
+position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
+white-space:nowrap;font-family:'Share Tech Mono',monospace;font-size:0.55rem;
+letter-spacing:0.1em;padding:2px 6px;
+}
+
+.zone-info{
+position:absolute;bottom:12px;left:12px;right:12px;padding:0.75rem 1rem;
+z-index:10;opacity:0;transform:translateY(10px);transition:all 0.3s;
+}
+.zone-info.visible{opacity:1;transform:translateY(0)}
+.zone-info .info-header{display:flex;align-items:center;gap:0.5rem}
+.zone-info .info-dot{width:10px;height:10px;border-radius:50%}
+.zone-info .info-name{font-family:'Orbitron',sans-serif;font-weight:700;font-size:0.9rem}
+.zone-info .info-desc{font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:0.5rem}
+
+.map-label{
+position:absolute;font-family:'Share Tech Mono',monospace;font-size:0.55rem;
+letter-spacing:0.15em;z-index:5;
+}
+.map-label.tl{top:12px;left:12px;color:rgba(255,255,255,0.15)}
+.map-label.tr{top:12px;right:12px;color:rgba(0,255,157,0.3);animation:blink 1s infinite}
+
+/* ===== TICKETS ===== */
+#tickets{padding:6rem 1rem}
+.tickets-grid{
+display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;max-width:1100px;margin:0 auto;
+}
+@media(max-width:900px){.tickets-grid{grid-template-columns:1fr;max-width:400px}}
+
+.ticket-card{
+position:relative;overflow:hidden;transition:all 0.4s;
+}
+.ticket-card:hover{transform:translateY(-4px) scale(1.02)}
+.ticket-card.popular{margin-top:-1rem;margin-bottom:1rem}
+@media(max-width:900px){.ticket-card.popular{margin:0}}
+
+.ticket-popular-badge,.ticket-limited-badge{
+position:absolute;top:-1px;left:50%;transform:translateX(-50%);z-index:5;
+font-family:'Share Tech Mono',monospace;font-size:0.65rem;font-weight:700;
+letter-spacing:0.15em;padding:0.25rem 1rem;
+}
+.ticket-popular-badge{animation:badgeGlow 2s infinite}
+.ticket-limited-badge{animation:blink 1.5s infinite}
+
+.ticket-top-bar{height:3px}
+.ticket-scan{
+position:absolute;left:0;width:100%;height:1px;
+animation:scanMove 3s linear infinite;pointer-events:none;
+}
+.ticket-body{padding:2rem}
+.ticket-tier{
+font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;
+letter-spacing:0.2em;text-align:center;
+}
+.ticket-divider{height:1px;margin:1rem 0}
+.ticket-price{text-align:center;margin:1.5rem 0}
+.ticket-price .amount{
+font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,5vw,3.5rem);font-weight:900;
+transition:text-shadow 0.3s;
+}
+.ticket-card:hover .ticket-price .amount{text-shadow:0 0 20px currentColor}
+.ticket-price .dollar{font-size:1.2rem;vertical-align:super}
+.ticket-price .per{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.25);margin-top:0.25rem}
+
+.ticket-features{list-style:none;margin-bottom:2rem}
+.ticket-features li{
+display:flex;align-items:center;gap:0.75rem;padding:0.4rem 0;
+font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:rgba(255,255,255,0.5);
+}
+.ticket-features li .dot{
+width:5px;height:5px;border-radius:50%;flex-shrink:0;
+}
+
+.ticket-corners>div{position:absolute;width:16px;height:16px;opacity:0.2}
+.ticket-corners .tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid}
+.ticket-corners .br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid}
+
+/* ===== FOOTER ===== */
+#footer{padding:5rem 1rem 2rem;position:relative}
+.footer-top-line{
+position:absolute;top:0;left:0;right:0;height:1px;
+background:linear-gradient(90deg,transparent,var(--cyber-blue),var(--cyber-pink),var(--cyber-blue),transparent);
+animation:tagPulse 4s infinite;
+}
+
+.footer-newsletter{
+text-align:center;margin-bottom:3rem;padding:2rem;max-width:700px;margin-left:auto;margin-right:auto;
+}
+.footer-newsletter h3{
+font-family:'Orbitron',sans-serif;font-size:clamp(1.5rem,4vw,2rem);font-weight:900;margin-bottom:0.75rem;
+}
+.footer-newsletter p{
+font-family:'Share Tech Mono',monospace;font-size:0.8rem;
+color:rgba(255,255,255,0.35);margin-bottom:1.5rem;
+}
+.footer-newsletter form{
+display:flex;gap:0.75rem;max-width:400px;margin:0 auto;flex-wrap:wrap;justify-content:center;
+}
+.footer-newsletter input{
+flex:1;min-width:200px;padding:0.75rem 1rem;background:transparent;
+border:1px solid rgba(0,240,255,0.25);color:#fff;
+font-family:'Share Tech Mono',monospace;font-size:0.85rem;
+outline:none;transition:all 0.3s;
+}
+.footer-newsletter input::placeholder{color:rgba(255,255,255,0.2)}
+.footer-newsletter input:focus{border-color:var(--cyber-blue);box-shadow:0 0 15px rgba(0,240,255,0.15)}
+
+.footer-grid{
+display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2rem;
+max-width:1200px;margin:0 auto 2rem;
+}
+@media(max-width:768px){.footer-grid{grid-template-columns:1fr 1fr;gap:1.5rem}}
+@media(max-width:480px){.footer-grid{grid-template-columns:1fr}}
+
+.footer-brand .logo{
+font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;
+letter-spacing:0.15em;margin-bottom:1rem;
+}
+.footer-brand .desc{
+font-family:'Share Tech Mono',monospace;font-size:0.7rem;
+color:rgba(255,255,255,0.25);line-height:1.6;margin-bottom:1.5rem;
+}
+.footer-socials{display:flex;gap:0.5rem}
+.footer-socials a{
+width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);
+text-decoration:none;font-size:0.85rem;transition:all 0.3s;
+}
+.footer-socials a:hover{
+color:var(--cyber-blue);border-color:rgba(0,240,255,0.4);
+box-shadow:0 0 12px rgba(0,240,255,0.3);transform:scale(1.1);
+}
+
+.footer-col h4{
+font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;
+letter-spacing:0.15em;color:rgba(0,240,255,0.5);margin-bottom:1rem;
+}
+.footer-col ul{list-style:none}
+.footer-col ul li{margin-bottom:0.5rem}
+.footer-col ul a{
+font-family:'Share Tech Mono',monospace;font-size:0.8rem;
+color:rgba(255,255,255,0.25);text-decoration:none;transition:all 0.3s;
+display:inline-flex;align-items:center;gap:0.5rem;
+}
+.footer-col ul a .arrow{color:rgba(255,0,255,0.25);font-size:0.6rem}
+.footer-col ul a:hover{color:var(--cyber-blue);transform:translateX(5px)}
+
+.footer-bottom{
+border-top:1px solid rgba(255,255,255,0.05);padding-top:1.5rem;
+display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+gap:1rem;max-width:1200px;margin:0 auto;
+}
+.footer-bottom span{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.15)}
+.footer-bottom .status{display:flex;align-items:center;gap:0.5rem}
+.footer-bottom .status .dot{
+width:6px;height:6px;border-radius:50%;background:var(--cyber-green);animation:blink 1s infinite;
+}
+
+/* ===== FLOATING ASTRONAUT ===== */
+.floating-astronaut{
+position:fixed;bottom:2rem;right:2rem;z-index:100;
+font-size:2.5rem;animation:floatAstro 6s ease-in-out infinite;
+pointer-events:none;
+}
+
+/* ===== AUDIO VIZ ===== */
+.audio-viz{
+position:fixed;bottom:2rem;left:2rem;z-index:100;
+display:flex;align-items:flex-end;gap:2px;cursor:pointer;
+padding:8px;
+}
+.audio-viz .bar{
+width:3px;border-radius:1px;transition:height 0.1s;
+background:linear-gradient(to top,var(--cyber-blue),var(--cyber-pink));
+}
+.audio-viz.active .bar{box-shadow:0 0 4px var(--cyber-blue)}
+
+/* ===== ENERGY SEPARATOR ===== */
+.energy-sep{
+height:1px;max-width:600px;margin:0 auto;
+background:linear-gradient(90deg,transparent,var(--cyber-blue),var(--cyber-pink),transparent);
+animation:tagPulse 3s infinite;
+}
+
+/* ===== REVEAL ANIMATION ===== */
+.reveal{opacity:0;transform:translateY(30px);transition:all 0.7s cubic-bezier(0.4,0,0.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:0.1s}
+.reveal-delay-2{transition-delay:0.2s}
+.reveal-delay-3{transition-delay:0.3s}
+.reveal-delay-4{transition-delay:0.4s}
+.reveal-delay-5{transition-delay:0.5s}
+
+/* ===== KEYFRAMES ===== */
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes cornerPulse{0%,100%{opacity:0.25}50%{opacity:0.7}}
+@keyframes scanMove{0%{top:-5%}100%{top:105%}}
+@keyframes rotateSlow{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes corePulse{0%,100%{box-shadow:0 0 8px var(--cyber-blue)}50%{box-shadow:0 0 18px var(--cyber-pink)}}
+@keyframes nebulaPulse{0%,100%{transform:scale(1);opacity:0.6}50%{transform:scale(1.15);opacity:1}}
+@keyframes heroSlideIn{0%{opacity:0;transform:translateY(40px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes floatY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}
+@keyframes scrollWheel{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(16px)}}
+@keyframes countPulse{0%,100%{opacity:0;transform:scale(0.8)}50%{opacity:0.15;transform:scale(1.2)}}
+@keyframes dotPulse{0%,100%{background:rgba(0,240,255,0.3);transform:scale(1)}50%{background:rgba(255,0,255,0.5);transform:scale(1.5)}}
+@keyframes tagPulse{0%,100%{opacity:0.5}50%{opacity:1}}
+@keyframes dotGlow{0%,100%{box-shadow:0 0 4px currentColor}50%{box-shadow:0 0 12px currentColor,0 0 20px currentColor}}
+@keyframes zonePulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.3}50%{transform:translate(-50%,-50%) scale(2);opacity:0}}
+@keyframes badgeGlow{0%,100%{box-shadow:0 0 8px currentColor}50%{box-shadow:0 0 20px currentColor}}
+@keyframes floatAstro{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-12px) rotate(3deg)}75%{transform:translateY(-6px) rotate(-3deg)}}
+@keyframes hudFlicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:0.3}}
+@keyframes modalIn{0%{opacity:0;transform:scale(0.85) rotateY(-10deg)}100%{opacity:1;transform:scale(1) rotateY(0)}}
+@keyframes dashMove{0%{stroke-dashoffset:0}100%{stroke-dashoffset:100}}
+@keyframes avatarPulse{0%,100%{opacity:0;border:1px solid currentColor}50%{opacity:0.4;border:1px solid currentColor}}
+@keyframes btnScan{0%{top:-30%}100%{top:130%}}
+@keyframes rippleOut{0%{width:0;height:0;opacity:0.4}100%{width:200px;height:200px;opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="corner-dec tl"></div>
+  <div class="corner-dec tr"></div>
+  <div class="corner-dec bl"></div>
+  <div class="corner-dec br"></div>
+  <div class="logo"><span class="a">AIR</span><span class="f">FEST</span> <span class="n">26</span></div>
+  <div id="loading-text">> INITIALIZING SYSTEMS...</div>
+  <div class="progress-bar-container">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-info"><span>SYS.LOAD</span><span class="pct" id="progress-pct">0%</span></div>
+  </div>
+</div>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Starfield -->
+<canvas id="starfield"></canvas>
+
+<!-- Scan Lines -->
+<div class="scanline"></div><div class="scanline"></div><div class="scanline"></div>
+
+<!-- HUD Overlay -->
+<div class="hud-overlay">
+  <div class="hud-text hud-tl">SYS.STATUS: ONLINE<br>NET.CONN: STABLE<br>LAT: 6.2°S | LON: 106.8°E</div>
+  <div class="hud-text hud-tr">AIRFEST_v26.0.1<br>FPS: 60 | RENDER: OK</div>
+</div>
+
+<!-- Vignette & Noise -->
+<div class="vignette"></div>
+<div class="noise"></div>
+
+<!-- Scroll Progress -->
+<div id="scroll-progress"></div>
+
+<!-- ======== MAIN CONTENT (hidden until loaded) ======== -->
+<div id="main-content" style="opacity:0;transition:opacity 1s">
+
+<!-- Navbar -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#hero">
+      <div class="nav-logo-orbit">
+        <div class="ring1"></div><div class="ring2"></div><div class="core"></div>
+      </div>
+      <div>
+        <div class="nav-logo-text"><span class="a">AIR</span><span class="f">FEST</span> <span class="n">26</span></div>
+        <div class="nav-logo-line"></div>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#hero" class="active"><span class="icon">◆</span>HOME</a></li>
+      <li><a href="#features"><span class="icon">◇</span>ABOUT</a></li>
+      <li><a href="#schedule"><span class="icon">▸</span>SCHEDULE</a></li>
+      <li><a href="#speakers"><span class="icon">◈</span>SPEAKERS</a></li>
+      <li><a href="#tickets"><span class="icon">▪</span>TICKETS</a></li>
+      <li><a href="#footer"><span class="icon">◉</span>CONTACT</a></li>
+    </ul>
+    <button class="nav-cta" onclick="document.getElementById('tickets').scrollIntoView({behavior:'smooth'})">LAUNCH →</button>
+    <button class="nav-mobile-btn" id="mobile-btn" onclick="toggleMobile()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobile-menu">
+  <a href="#hero" onclick="closeMobile()">◆ HOME</a>
+  <a href="#features" onclick="closeMobile()">◇ ABOUT</a>
+  <a href="#schedule" onclick="closeMobile()">▸ SCHEDULE</a>
+  <a href="#speakers" onclick="closeMobile()">◈ SPEAKERS</a>
+  <a href="#tickets" onclick="closeMobile()">▪ TICKETS</a>
+  <a href="#footer" onclick="closeMobile()">◉ CONTACT</a>
+</div>
+
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <div class="hero-nebula n1"></div>
+  <div class="hero-nebula n2"></div>
+  <div class="hero-nebula n3"></div>
+  <div class="hero-orbit orbit1"><div class="dot"></div></div>
+  <div class="hero-orbit orbit2"><div class="dot"></div></div>
+  <div class="hero-orbit orbit3"><div class="dot"></div></div>
+  <div class="hero-orbit orbit4"><div class="dot"></div></div>
+  <div class="hero-grid-floor"><div class="grid"></div></div>
+
+  <div class="hero-content">
+    <div class="hero-badge glass cyber-clip">
+      <div class="dot green"></div>
+      <span>JULY 26-28, 2026 • JAKARTA</span>
+      <div class="dot pink"></div>
+    </div>
+
+    <h1 class="hero-title">
+      <span class="line line1">AIR</span>
+      <span class="line line2">FEST</span>
+      <span class="line line3">26</span>
+    </h1>
+
+    <div class="hero-subtitle">
+      <span id="typed-text"></span><span class="cursor-blink">|</span>
+    </div>
+
+    <div class="hero-divider">
+      <div class="line-l"></div>
+      <div class="diamond"></div>
+      <div class="line-r"></div>
+    </div>
+
+    <div class="hero-buttons">
+      <button class="neon-btn blue cyber-clip" onclick="createRipple(event)"><span class="scan"></span>GET TICKETS</button>
+      <button class="neon-btn pink cyber-clip" onclick="createRipple(event)"><span class="scan"></span>EXPLORE EVENT</button>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-card glass cyber-clip"><div class="value">50+</div><div class="label">SPEAKERS</div></div>
+      <div class="stat-card glass cyber-clip"><div class="value">3</div><div class="label">DAYS</div></div>
+      <div class="stat-card glass cyber-clip"><div class="value">10K+</div><div class="label">ATTENDEES</div></div>
+      <div class="stat-card glass cyber-clip"><div class="value">∞</div><div class="label">EXPERIENCE</div></div>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="text">SCROLL</div>
+    <div class="mouse"><div class="wheel"></div></div>
+  </div>
+</section>
+
+<!-- ===== COUNTDOWN ===== -->
+<section id="countdown">
+  <div class="energy-sep" style="margin-bottom:3rem"></div>
+  <div class="section-header reveal">
+    <span class="section-tag pink">> COUNTDOWN_INITIALIZED</span>
+    <h2 class="section-title">LAUNCH IN</h2>
+  </div>
+  <div class="countdown-grid" id="countdown-grid"></div>
+  <div class="countdown-dots" id="countdown-dots"></div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section id="features">
+  <div class="section-header reveal">
+    <span class="section-tag yellow">> SYSTEM_FEATURES</span>
+    <h2 class="section-title">THE <span style="color:var(--cyber-blue)">EXPERIENCE</span></h2>
+    <p style="margin-top:1rem;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.3);max-width:550px;margin-left:auto;margin-right:auto;font-size:0.85rem">
+      AIRFEST 26 is not just an event. It's a gateway to a new dimension of entertainment, technology, and cosmic wonder.
+    </p>
+  </div>
+  <div class="features-grid" id="features-grid"></div>
+</section>
+
+<!-- ===== SCHEDULE ===== -->
+<section id="schedule">
+  <div class="section-header reveal">
+    <span class="section-tag pink">> MISSION_TIMELINE</span>
+    <h2 class="section-title"><span style="color:var(--cyber-blue)">EVENT</span> SCHEDULE</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="day-selector" id="day-selector"></div>
+  <div class="schedule-date" id="schedule-date"></div>
+  <div class="timeline" id="timeline"></div>
+</section>
+
+<!-- ===== SPEAKERS ===== -->
+<section id="speakers">
+  <div class="section-header reveal">
+    <span class="section-tag green">> CREW_MANIFEST</span>
+    <h2 class="section-title"><span style="color:var(--cyber-pink)">STAR</span> SPEAKERS</h2>
+    <div class="section-line" style="background:linear-gradient(90deg,transparent,var(--cyber-pink),var(--cyber-blue),transparent)"></div>
+  </div>
+  <div class="speakers-grid" id="speakers-grid"></div>
+</section>
+
+<!-- ===== VENUE MAP ===== -->
+<section id="venue">
+  <div class="section-header reveal">
+    <span class="section-tag purple">> NAVIGATION_MAP</span>
+    <h2 class="section-title">VENUE <span style="color:var(--cyber-purple)">MAP</span></h2>
+  </div>
+  <div class="venue-map glass cyber-clip-lg reveal" id="venue-map">
+    <div class="grid-bg matrix-bg"></div>
+    <svg id="map-lines"></svg>
+    <div class="map-label tl">VENUE_MAP_v2.6</div>
+    <div class="map-label tr">● LIVE</div>
+    <div class="zone-info glass cyber-clip" id="zone-info">
+      <div class="info-header"><div class="info-dot"></div><div class="info-name"></div></div>
+      <div class="info-desc"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TICKETS ===== -->
+<section id="tickets">
+  <div class="section-header reveal">
+    <span class="section-tag blue">> ACCESS_CLEARANCE</span>
+    <h2 class="section-title"><span style="color:var(--cyber-yellow)">GET YOUR</span> PASS</h2>
+    <div class="section-line" style="background:linear-gradient(90deg,transparent,var(--cyber-yellow),var(--cyber-blue),transparent)"></div>
+  </div>
+  <div class="tickets-grid" id="tickets-grid"></div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer id="footer">
+  <div class="footer-top-line"></div>
+  <div class="footer-newsletter glass cyber-clip-lg reveal">
+    <h3><span style="color:var(--cyber-blue)">JOIN THE</span> <span style="color:var(--cyber-pink)">NETWORK</span></h3>
+    <p>Subscribe to receive transmissions about AIRFEST 26.</p>
+    <form onsubmit="event.preventDefault();alert('Connected to the AIRFEST 26 network!')">
+      <input type="email" placeholder="your@email.com" class="cyber-clip" required>
+      <button type="submit" class="neon-btn blue cyber-clip" onclick="createRipple(event)"><span class="scan"></span>SUBSCRIBE</button>
+    </form>
+  </div>
+
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="logo"><span style="color:var(--cyber-blue)">AIR</span><span style="color:var(--cyber-pink)">FEST</span> <span style="color:var(--cyber-yellow)">26</span></div>
+      <p class="desc">The ultimate convergence of space exploration and cyberpunk culture. Where the cosmos meets the digital frontier.</p>
+      <div class="footer-socials">
+        <a href="#" class="cyber-clip">𝕏</a>
+        <a href="#" class="cyber-clip">◈</a>
+        <a href="#" class="cyber-clip">◎</a>
+        <a href="#" class="cyber-clip">♪</a>
+        <a href="#" class="cyber-clip">▶</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>NAVIGATION</h4>
+      <ul>
+        <li><a href="#hero"><span class="arrow">▸</span>Home</a></li>
+        <li><a href="#features"><span class="arrow">▸</span>About</a></li>
+        <li><a href="#schedule"><span class="arrow">▸</span>Schedule</a></li>
+        <li><a href="#speakers"><span class="arrow">▸</span>Speakers</a></li>
+        <li><a href="#tickets"><span class="arrow">▸</span>Tickets</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>RESOURCES</h4>
+      <ul>
+        <li><a href="#"><span class="arrow">▸</span>FAQ</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Guidelines</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Privacy</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Terms</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>COMMUNITY</h4>
+      <ul>
+        <li><a href="#"><span class="arrow">▸</span>Forum</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Blog</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Newsletter</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Merch Store</a></li>
+        <li><a href="#"><span class="arrow">▸</span>Partners</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 AIRFEST 26. ALL RIGHTS RESERVED.</span>
+    <span class="status"><span class="dot"></span>ALL SYSTEMS OPERATIONAL</span>
+    <span>MADE WITH <span style="color:var(--cyber-pink)">♥</span> IN THE COSMOS</span>
+  </div>
+</footer>
+
+</div><!-- /main-content -->
+
+<!-- Floating Astronaut -->
+<div class="floating-astronaut">🧑‍🚀</div>
+
+<!-- Audio Visualizer -->
+<div class="audio-viz" id="audio-viz" onclick="toggleAudio()">
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+  <div class="bar" style="height:5px"></div><div class="bar" style="height:5px"></div>
+</div>
+
+<!-- Speaker Modal -->
+<div class="modal-overlay" id="speaker-modal">
+  <div class="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal-content glass cyber-clip-lg">
+    <div class="modal-top-bar" id="modal-bar"></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ===========================
+// DATA
+// ===========================
+const FEATURES = [
+  {icon:'🚀',title:'WARP STAGES',desc:'Multiple stages with different dimensions of experience.',stat:'5 STAGES',color:'#00f0ff'},
+  {icon:'🌌',title:'ZERO-G ZONES',desc:'Experience weightlessness in our simulated zero-gravity zones.',stat:'3 ZONES',color:'#ff00ff'},
+  {icon:'🔮',title:'HOLOGRAM TECH',desc:'Cutting-edge holographic displays and interactive AR.',stat:'100+ DISPLAYS',color:'#b829dd'},
+  {icon:'⚡',title:'NEURAL LINK',desc:'Connect your consciousness for real-time updates.',stat:'REAL-TIME',color:'#f0ff00'},
+  {icon:'🛸',title:'FOOD GALAXY',desc:'Culinary experiences from across the cosmos.',stat:'50+ VENDORS',color:'#00ff9d'},
+  {icon:'💎',title:'CRYPTO MARKET',desc:'Trade exclusive NFTs and digital collectibles.',stat:'EXCLUSIVE',color:'#ff073a'},
+];
+
+const SCHEDULE = [
+  {day:'DAY 01',date:'JULY 26, 2026',code:'IGNITION',events:[
+    {time:'09:00',title:'GATEWAY OPENING',desc:'Neural link activation ceremony',type:'ceremony',speaker:'CMDR. NOVA',color:'#f0ff00'},
+    {time:'10:30',title:'QUANTUM KEYNOTE',desc:'The future of space-digital fusion',type:'keynote',speaker:'DR. STELLAR',color:'#00f0ff'},
+    {time:'13:00',title:'CYBER WORKSHOP',desc:'Build your first neural interface',type:'workshop',speaker:'HACK3R ZERO',color:'#00ff9d'},
+    {time:'15:30',title:'SPACE RACE VR',desc:'Interstellar racing competition',type:'competition',speaker:'TEAM NEBULA',color:'#ff073a'},
+    {time:'18:00',title:'NEON NIGHTS PT.1',desc:'Synthwave concert experience',type:'performance',speaker:'DJ COSMOS',color:'#ff00ff'},
+    {time:'21:00',title:'HOLOGRAM SHOW',desc:'Full immersive light experience',type:'show',speaker:'LUMINA CORP',color:'#b829dd'},
+  ]},
+  {day:'DAY 02',date:'JULY 27, 2026',code:'ASCEND',events:[
+    {time:'09:00',title:'DIGITAL DAWN',desc:'AI consciousness panel',type:'panel',speaker:'THE COUNCIL',color:'#00f0ff'},
+    {time:'11:00',title:'MECH ARENA',desc:'Robotic combat tournament',type:'competition',speaker:'IRON LEGION',color:'#ff073a'},
+    {time:'13:30',title:'ASTRO CODING',desc:'Code in zero gravity simulation',type:'workshop',speaker:'BYTE PILOT',color:'#00ff9d'},
+    {time:'16:00',title:'STARGATE PANEL',desc:'Wormhole technology debate',type:'panel',speaker:'WARP COUNCIL',color:'#00f0ff'},
+    {time:'19:00',title:'NEON NIGHTS PT.2',desc:'Electronic music in the void',type:'performance',speaker:'MC PHOTON',color:'#ff00ff'},
+    {time:'22:00',title:'AURORA RAVE',desc:'Dance under artificial aurora',type:'party',speaker:'AURORA CREW',color:'#ff00ff'},
+  ]},
+  {day:'DAY 03',date:'JULY 28, 2026',code:'TRANSCEND',events:[
+    {time:'10:00',title:'FINAL FRONTIER',desc:'Closing keynote presentation',type:'keynote',speaker:'ADMIRAL FLUX',color:'#00f0ff'},
+    {time:'12:00',title:'COSMO BAZAAR',desc:'Intergalactic marketplace',type:'marketplace',speaker:'MERCHANTS',color:'#f0ff00'},
+    {time:'14:00',title:'HACKATHON FINAL',desc:'48hr hackathon results',type:'competition',speaker:'FINALISTS',color:'#ff073a'},
+    {time:'16:30',title:'AWARDS CEREMONY',desc:'Best of AIRFEST 26',type:'ceremony',speaker:'JUDGES',color:'#f0ff00'},
+    {time:'19:00',title:'GRAND FINALE',desc:'The ultimate closing show',type:'show',speaker:'ALL ARTISTS',color:'#b829dd'},
+    {time:'22:00',title:'STARFALL',desc:'Drone light show & fireworks',type:'show',speaker:'SKY COMMAND',color:'#b829dd'},
+  ]},
+];
+
+const SPEAKERS = [
+  {id:1,name:'DR. STELLAR',role:'Quantum Physicist',org:'NOVA INSTITUTE',avatar:'🧑‍🚀',color:'#00f0ff',bio:'Pioneer in quantum-digital fusion technology.',topics:['Quantum Computing','Space-Digital Fusion','Neural Networks']},
+  {id:2,name:'CMDR. NOVA',role:'Space Commander',org:'GALACTIC FLEET',avatar:'👨‍✈️',color:'#ff00ff',bio:'Veteran of 12 deep space missions.',topics:['Space Navigation','Warp Technology','Leadership']},
+  {id:3,name:'HACK3R ZERO',role:'Cyber Security Expert',org:'DARK NET LABS',avatar:'🦹',color:'#00ff9d',bio:"World's top ethical hacker. Neural firewall specialist.",topics:['Cyber Security','Neural Firewalls','Quantum Encryption']},
+  {id:4,name:'ADMIRAL FLUX',role:'Fleet Admiral',org:'STAR COMMAND',avatar:'🧙‍♂️',color:'#f0ff00',bio:'Commander of the 7th Interstellar Fleet.',topics:['Fleet Strategy','Space Combat','Diplomacy']},
+  {id:5,name:'DJ COSMOS',role:'Sound Architect',org:'FREQUENCY LABS',avatar:'🎧',color:'#b829dd',bio:'Creator of the Synthwave Renaissance.',topics:['Synthwave','Sound Design','Immersive Audio']},
+  {id:6,name:'BYTE PILOT',role:'AI Developer',org:'SYNTH MIND',avatar:'🤖',color:'#ff073a',bio:'Creator of the first sentient AI companion.',topics:['AI Development','Machine Ethics','Consciousness']},
+];
+
+const TICKETS = [
+  {tier:'SCOUT',price:'150',color:'#00f0ff',btnColor:'blue',features:['General Admission','Main Stage Access','Digital Goodie Bag','AIRFEST 26 NFT Badge','Food Court Access'],popular:false,limited:false},
+  {tier:'VOYAGER',price:'350',color:'#ff00ff',btnColor:'pink',features:['Everything in SCOUT','VIP Stage Access','Zero-G Zone Pass','Meet & Greet Session','Premium Merch Pack','Priority Entry','Exclusive After Party'],popular:true,limited:false},
+  {tier:'COMMANDER',price:'999',color:'#f0ff00',btnColor:'yellow',features:['Everything in VOYAGER','All-Access Pass','Private Lounge','Personal Concierge','Backstage Tour','Limited Edition Hardware','Lifetime Membership','Space Shuttle Experience'],popular:false,limited:true},
+];
+
+const ZONES = [
+  {id:'main',name:'MAIN STAGE',x:50,y:30,color:'#00f0ff',desc:'Massive LED displays and holographic projections.'},
+  {id:'cyber',name:'CYBER ARENA',x:22,y:52,color:'#ff00ff',desc:'Competitive gaming and hackathon zone.'},
+  {id:'zerog',name:'ZERO-G DOME',x:78,y:52,color:'#b829dd',desc:'Simulated zero gravity experience.'},
+  {id:'food',name:'NEBULA FOOD',x:32,y:78,color:'#f0ff00',desc:'Interstellar cuisine. 50+ vendors.'},
+  {id:'merch',name:'WARP MARKET',x:68,y:78,color:'#00ff9d',desc:'Exclusive merch, NFTs, collectibles.'},
+  {id:'vip',name:'VIP LOUNGE',x:50,y:55,color:'#ff073a',desc:'Premium experience with private viewing.'},
+];
+
+// ===========================
+// LOADING SCREEN
+// ===========================
+const loadMsgs = ['INITIALIZING SYSTEMS','CONNECTING TO MOTHERSHIP','CALIBRATING WARP DRIVE','LOADING NEURAL INTERFACE','SYNCING QUANTUM DATA','ESTABLISHING LINK','RENDERING CYBERSPACE','ACTIVATING HOLOGRAPHICS','SYSTEM READY'];
+let loadProgress = 0;
+const loadInterval = setInterval(()=>{
+  loadProgress += Math.random()*15+5;
+  if(loadProgress>100) loadProgress=100;
+  document.getElementById('progress-fill').style.width = loadProgress+'%';
+  document.getElementById('progress-pct').textContent = Math.floor(loadProgress)+'%';
+  const mi = Math.min(Math.floor((loadProgress/100)*loadMsgs.length), loadMsgs.length-1);
+  document.getElementById('loading-text').textContent = '> '+loadMsgs[mi]+'...';
+  if(loadProgress>=100){
+    clearInterval(loadInterval);
+    setTimeout(()=>{
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('main-content').style.opacity='1';
+      initAll();
+    },600);
+  }
+},350);
+
+// ===========================
+// STARFIELD
+// ===========================
+function initStarfield(){
+  const c=document.getElementById('starfield'),ctx=c.getContext('2d');
+  let W,H;
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  resize(); window.addEventListener('resize',resize);
+  const colors=['#00f0ff','#ff00ff','#ffffff','#b829dd','#f0ff00'];
+  const stars=Array.from({length:250},()=>({
+    x:Math.random()*2000,y:Math.random()*2000,
+    s:Math.random()*1.8+0.4,sp:Math.random()*0.02+0.005,
+    o:Math.random()*0.7+0.2,c:colors[Math.floor(Math.random()*5)]
+  }));
+  let t=0;
+  (function draw(){
+    t++;ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      const tw=Math.sin(t*s.sp)*0.5+0.5;
+      ctx.globalAlpha=s.o*tw;
+      ctx.beginPath();ctx.arc(s.x%W,s.y%H,s.s*(0.8+tw*0.3),0,Math.PI*2);
+      ctx.fillStyle=s.c;ctx.fill();
+      if(s.s>1.2){ctx.globalAlpha=s.o*tw*0.08;ctx.beginPath();ctx.arc(s.x%W,s.y%H,s.s*3,0,Math.PI*2);ctx.fill()}
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  })();
+}
+
+// ===========================
+// CURSOR
+// ===========================
+function initCursor(){
+  const dot=document.getElementById('cursor-dot'),ring=document.getElementById('cursor-ring');
+  let mx=0,my=0,dx=0,dy=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+  document.addEventListener('mousedown',()=>ring.classList.add('clicking'));
+  document.addEventListener('mouseup',()=>ring.classList.remove('clicking'));
+  (function anim(){
+    dx+=(mx-dx)*0.2;dy+=(my-dy)*0.2;
+    rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;
+    dot.style.left=dx+'px';dot.style.top=dy+'px';
+    ring.style.left=rx+'px';ring.style.top=ry+'px';
+    requestAnimationFrame(anim);
+  })();
+}
+
+// ===========================
+// TYPING EFFECT
+// ===========================
+function initTyping(){
+  const text='BEYOND THE STARS, INTO THE FUTURE';
+  const el=document.getElementById('typed-text');
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<=text.length){el.textContent=text.slice(0,i);i++}else clearInterval(iv);
+  },60);
+}
+
+// ===========================
+// SCROLL
+// ===========================
+function initScroll(){
+  const nav=document.getElementById('navbar'),prog=document.getElementById('scroll-progress');
+  const links=document.querySelectorAll('.nav-links a');
+  const sectionIds=['hero','features','schedule','speakers','tickets','footer'];
+  window.addEventListener('scroll',()=>{
+    const y=window.pageYOffset;
+    nav.classList.toggle('scrolled',y>50);
+    const total=document.documentElement.scrollHeight-window.innerHeight;
+    prog.style.width=(y/total*100)+'%';
+    // active link
+    let current='hero';
+    sectionIds.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&el.offsetTop-200<=y) current=id;
+    });
+    links.forEach(a=>{
+      a.classList.toggle('active',a.getAttribute('href')==='#'+current);
+    });
+  },{passive:true});
+}
+
+// ===========================
+// REVEAL ON SCROLL
+// ===========================
+function initReveal(){
+  const observer=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+  },{threshold:0.1});
+  document.querySelectorAll('.reveal,.timeline-item').forEach(el=>observer.observe(el));
+}
+
+// ===========================
+// MOBILE MENU
+// ===========================
+function toggleMobile(){
+  document.getElementById('mobile-btn').classList.toggle('open');
+  document.getElementById('mobile-menu').classList.toggle('open');
+}
+function closeMobile(){
+  document.getElementById('mobile-btn').classList.remove('open');
+  document.getElementById('mobile-menu').classList.remove('open');
+}
+
+// ===========================
+// COUNTDOWN
+// ===========================
+function initCountdown(){
+  const grid=document.getElementById('countdown-grid');
+  const blocks=[
+    {label:'DAYS',color:'#00f0ff'},
+    {label:'HOURS',color:'#ff00ff'},
+    {label:'MINUTES',color:'#b829dd'},
+    {label:'SECONDS',color:'#f0ff00'},
+  ];
+  grid.innerHTML=blocks.map((b,i)=>`
+    <div class="countdown-block glass cyber-clip-lg reveal reveal-delay-${i+1}">
+      <div class="bg-pulse" style="background:radial-gradient(circle,${b.color}15,transparent)"></div>
+      <div class="scan-line" style="background:${b.color}30"></div>
+      <div class="number" style="color:${b.color};text-shadow:0 0 20px ${b.color}" id="cd-${b.label.toLowerCase()}">00</div>
+      <div class="unit">${b.label}</div>
+    </div>
+  `).join('');
+  // dots
+  const dots=document.getElementById('countdown-dots');
+  dots.innerHTML=Array.from({length:20},(_,i)=>`<div class="d" style="animation-delay:${i*0.1}s"></div>`).join('');
+
+  function tick(){
+    const ev=new Date('2026-07-26T00:00:00');
+    const diff=Math.max(0,ev-new Date());
+    const d=Math.floor(diff/864e5),h=Math.floor(diff/36e5)%24,m=Math.floor(diff/6e4)%60,s=Math.floor(diff/1e3)%60;
+    document.getElementById('cd-days').textContent=String(d).padStart(2,'0');
+    document.getElementById('cd-hours').textContent=String(h).padStart(2,'0');
+    document.getElementById('cd-minutes').textContent=String(m).padStart(2,'0');
+    document.getElementById('cd-seconds').textContent=String(s).padStart(2,'0');
+  }
+  tick();setInterval(tick,1000);
+}
+
+// ===========================
+// FEATURES
+// ===========================
+function initFeatures(){
+  const grid=document.getElementById('features-grid');
+  grid.innerHTML=FEATURES.map((f,i)=>`
+    <div class="feature-card glass cyber-clip-lg reveal reveal-delay-${(i%3)+1}">
+      <div class="hover-bg"></div>
+      <div class="scan" style="background:${f.color}20"></div>
+      <div class="icon">${f.icon}</div>
+      <h3 style="color:${f.color}">${f.title}</h3>
+      <p>${f.desc}</p>
+      <div class="stat-line">
+        <div class="line" style="background:${f.color}30"></div>
+        <span style="color:${f.color}">${f.stat}</span>
+      </div>
+      <div class="corner br" style="border-color:${f.color}"></div>
+    </div>
+  `).join('');
+}
+
+// ===========================
+// SCHEDULE
+// ===========================
+let activeDay=0;
+function initSchedule(){
+  renderDaySelector();
+  renderTimeline();
+}
+function renderDaySelector(){
+  const sel=document.getElementById('day-selector');
+  sel.innerHTML=SCHEDULE.map((s,i)=>`
+    <button class="day-btn cyber-clip ${i===activeDay?'active':''}" onclick="switchDay(${i})">
+      ${s.day}<span class="codename">${s.code}</span>
+    </button>
+  `).join('');
+}
+function switchDay(i){
+  activeDay=i;renderDaySelector();renderTimeline();
+}
+function renderTimeline(){
+  const d=SCHEDULE[activeDay];
+  document.getElementById('schedule-date').textContent=d.date;
+  const tl=document.getElementById('timeline');
+  tl.innerHTML=d.events.map((e,i)=>`
+    <div class="timeline-item" style="transition-delay:${i*0.08}s">
+      <div class="timeline-dot" style="color:${e.color};background:${e.color};box-shadow:0 0 10px ${e.color}"></div>
+      <div class="timeline-time" style="color:${e.color};${i%2===0?'text-align:right;padding-right:2rem':'text-align:left;padding-left:2rem'}">${e.time}</div>
+      <div class="timeline-card glass cyber-clip" style="${i%2===0?'':''}">
+        <div class="card-scan" style="background:${e.color}20"></div>
+        <div class="mobile-time" style="color:${e.color}">${e.time}</div>
+        <span class="type-badge cyber-clip" style="background:${e.color}15;color:${e.color};border:1px solid ${e.color}40">${e.type}</span>
+        <h4>${e.title}</h4>
+        <div class="desc">${e.desc}</div>
+        <div class="speaker"><div class="live-dot"></div><span>${e.speaker}</span></div>
+        <div class="corners"><div class="tl" style="border-color:${e.color}40"></div><div class="tr" style="border-color:${e.color}40"></div><div class="bl" style="border-color:${e.color}40"></div><div class="br" style="border-color:${e.color}40"></div></div>
+      </div>
+    </div>
+  `).join('');
+  setTimeout(()=>{
+    document.querySelectorAll('.timeline-item').forEach(el=>{
+      const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)el.classList.add('visible')},{threshold:0.1});
+      obs.observe(el);
+    });
+  },50);
+}
+
+// ===========================
+// SPEAKERS
+// ===========================
+function initSpeakers(){
+  const grid=document.getElementById('speakers-grid');
+  grid.innerHTML=SPEAKERS.map((s,i)=>`
+    <div class="speaker-card glass cyber-clip-lg reveal reveal-delay-${(i%3)+1}" onclick="openSpeakerModal(${s.id})">
+      <div class="card-scan" style="background:${s.color}25"></div>
+      <div class="hover-bg" style="background:linear-gradient(135deg,${s.color}08,transparent,${s.color}04)"></div>
+      <div class="speaker-header">
+        <div class="speaker-avatar" style="border:2px solid ${s.color}40;background:${s.color}10">
+          ${s.avatar}
+          <div class="pulse-ring" style="color:${s.color}"></div>
+        </div>
+        <div class="speaker-info">
+          <h3 style="color:${s.color}">${s.name}</h3>
+          <div class="role">${s.role}</div>
+          <div class="org" style="color:${s.color}80">@ ${s.org}</div>
+        </div>
+      </div>
+      <div class="speaker-bio">${s.bio}</div>
+      <div class="speaker-topics">${s.topics.map(t=>`<span class="topic cyber-clip" style="background:${s.color}10;color:${s.color}cc;border:1px solid ${s.color}30">${t}</span>`).join('')}</div>
+      <div class="speaker-status"><div class="dot" style="background:${s.color}"></div><span>CONFIRMED</span></div>
+      <div class="speaker-corners"><div class="tl" style="border-color:${s.color}"></div><div class="br" style="border-color:${s.color}"></div></div>
+    </div>
+  `).join('');
+}
+function openSpeakerModal(id){
+  const s=SPEAKERS.find(x=>x.id===id);if(!s)return;
+  document.getElementById('modal-bar').style.background=`linear-gradient(90deg,${s.color},transparent)`;
+  document.getElementById('modal-body').innerHTML=`
+    <div class="avatar">${s.avatar}</div>
+    <h3 style="color:${s.color}">${s.name}</h3>
+    <div class="role">${s.role}</div>
+    <div class="org" style="color:${s.color}">@ ${s.org}</div>
+    <div class="bio">${s.bio}</div>
+    <div class="topics">${s.topics.map(t=>`<span class="topic cyber-clip" style="background:${s.color}15;color:${s.color};border:1px solid ${s.color}40">${t}</span>`).join('')}</div>
+    <button class="modal-close-btn cyber-clip" style="border:1px solid ${s.color};color:${s.color}" onclick="closeModal()">CLOSE TRANSMISSION</button>
+  `;
+  document.getElementById('speaker-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('speaker-modal').classList.remove('open')}
+
+// ===========================
+// VENUE MAP
+// ===========================
+function initVenueMap(){
+  const map=document.getElementById('venue-map');
+  // Connection lines
+  const svg=document.getElementById('map-lines');
+  let linesHtml='';
+  ZONES.forEach((z,i)=>{
+    const nz=ZONES[(i+1)%ZONES.length];
+    linesHtml+=`<line x1="${z.x}%" y1="${z.y}%" x2="${nz.x}%" y2="${nz.y}%" stroke="rgba(0,240,255,0.08)" stroke-width="1"/>`;
+  });
+  svg.innerHTML=linesHtml;
+
+  // Zone markers
+  ZONES.forEach(z=>{
+    const marker=document.createElement('div');
+    marker.className='zone-marker';
+    marker.style.left=z.x+'%';marker.style.top=z.y+'%';
+    marker.innerHTML=`
+      <div class="pulse" style="border-color:${z.color}30"></div>
+      <div class="dot" style="background:${z.color};box-shadow:0 0 12px ${z.color}"></div>
+      <div class="label" style="background:${z.color}15;color:${z.color};border:1px solid ${z.color}30">${z.name}</div>
+    `;
+    marker.addEventListener('mouseenter',()=>showZoneInfo(z));
+    marker.addEventListener('mouseleave',hideZoneInfo);
+    map.appendChild(marker);
+  });
+}
+function showZoneInfo(z){
+  const el=document.getElementById('zone-info');
+  el.querySelector('.info-dot').style.background=z.color;
+  el.querySelector('.info-dot').style.boxShadow=`0 0 8px ${z.color}`;
+  el.querySelector('.info-name').style.color=z.color;
+  el.querySelector('.info-name').textContent=z.name;
+  el.querySelector('.info-desc').textContent=z.desc;
+  el.classList.add('visible');
+}
+function hideZoneInfo(){document.getElementById('zone-info').classList.remove('visible')}
+
+// ===========================
+// TICKETS
+// ===========================
+function initTickets(){
+  const grid=document.getElementById('tickets-grid');
+  grid.innerHTML=TICKETS.map((t,i)=>`
+    <div class="ticket-card glass cyber-clip-lg reveal reveal-delay-${i+1} ${t.popular?'popular':''}" ${t.popular?'style="border:2px solid '+t.color+'40"':''}>
+      ${t.popular?`<div class="ticket-popular-badge cyber-clip" style="background:${t.color};color:#000">MOST POPULAR</div>`:''}
+      ${t.limited?`<div class="ticket-limited-badge cyber-clip" style="background:transparent;color:${t.color};border:1px solid ${t.color}">⚡ LIMITED</div>`:''}
+      <div class="ticket-top-bar" style="background:linear-gradient(90deg,transparent,${t.color},transparent)"></div>
+      <div class="ticket-scan" style="background:${t.color}20"></div>
+      <div class="ticket-body">
+        <div class="ticket-tier" style="color:${t.color}">${t.tier}</div>
+        <div class="ticket-divider" style="background:${t.color}20"></div>
+        <div class="ticket-price">
+          <div class="amount" style="color:${t.color}"><span class="dollar">$</span>${t.price}</div>
+          <div class="per">USD / PERSON</div>
+        </div>
+        <ul class="ticket-features">
+          ${t.features.map((f,j)=>`<li><span class="dot" style="background:${t.color};box-shadow:0 0 6px ${t.color}"></span>${f}</li>`).join('')}
+        </ul>
+        <button class="neon-btn ${t.btnColor} cyber-clip" style="width:100%" onclick="createRipple(event)"><span class="scan"></span>SECURE PASS</button>
+      </div>
+      <div class="ticket-corners"><div class="tl" style="border-color:${t.color}"></div><div class="br" style="border-color:${t.color}"></div></div>
+    </div>
+  `).join('');
+}
+
+// ===========================
+// AUDIO VIZ
+// ===========================
+let audioPlaying=false,audioInterval=null;
+function toggleAudio(){
+  const viz=document.getElementById('audio-viz');
+  audioPlaying=!audioPlaying;
+  viz.classList.toggle('active',audioPlaying);
+  if(audioPlaying){
+    audioInterval=setInterval(()=>{
+      viz.querySelectorAll('.bar').forEach(b=>{
+        b.style.height=(Math.random()*28+4)+'px';
+      });
+    },100);
+  }else{
+    clearInterval(audioInterval);
+    viz.querySelectorAll('.bar').forEach(b=>b.style.height='5px');
+  }
+}
+
+// ===========================
+// RIPPLE EFFECT
+// ===========================
+function createRipple(e){
+  const btn=e.currentTarget;
+  const rect=btn.getBoundingClientRect();
+  const ripple=document.createElement('div');
+  ripple.className='ripple';
+  ripple.style.left=(e.clientX-rect.left)+'px';
+  ripple.style.top=(e.clientY-rect.top)+'px';
+  btn.appendChild(ripple);
+  setTimeout(()=>ripple.remove(),600);
+}
+
+// ===========================
+// GLITCH TEXT (random intervals)
+// ===========================
+function initGlitch(){
+  const chars='!@#$%^&*()░▒▓█▀▄■□';
+  function glitchElement(el){
+    const orig=el.dataset.original||el.textContent;
+    el.dataset.original=orig;
+    let it=0;
+    const iv=setInterval(()=>{
+      el.textContent=orig.split('').map((c,i)=>{
+        if(c===' ')return ' ';
+        return it>i?orig[i]:chars[Math.floor(Math.random()*chars.length)];
+      }).join('');
+      it++;
+      if(it>orig.length){clearInterval(iv);el.textContent=orig}
+    },30);
+  }
+  // Glitch the hero title lines periodically
+  setInterval(()=>{
+    const lines=document.querySelectorAll('.hero-title .line');
+    const r=lines[Math.floor(Math.random()*lines.length)];
+    if(r) glitchElement(r);
+  },6000);
+}
+
+// ===========================
+// PARALLAX on mouse (hero nebulas)
+// ===========================
+function initParallax(){
+  document.addEventListener('mousemove',e=>{
+    const cx=window.innerWidth/2,cy=window.innerHeight/2;
+    const dx=(e.clientX-cx)/cx,dy=(e.clientY-cy)/cy;
+    document.querySelectorAll('.hero-nebula').forEach((n,i)=>{
+      const f=(i+1)*8;
+      n.style.transform=`translate(${dx*f}px,${dy*f}px) scale(${1+Math.abs(dx)*0.05})`;
+    });
+    document.querySelectorAll('.hero-orbit').forEach((o,i)=>{
+      const f=(i+1)*3;
+      o.style.marginLeft=dx*f+'px';
+      o.style.marginTop=dy*f+'px';
+    });
+  });
+}
+
+// ===========================
+// INIT ALL
+// ===========================
+function initAll(){
+  initStarfield();
+  initCursor();
+  initTyping();
+  initScroll();
+  initCountdown();
+  initFeatures();
+  initSchedule();
+  initSpeakers();
+  initVenueMap();
+  initTickets();
+  initGlitch();
+  initParallax();
+  setTimeout(initReveal,100);
+}
+</script>
+</body>
+</html>
